@@ -34,7 +34,6 @@ struct bucket{
 struct selection{
   struct bucket *buck;        /* points to corresponding bucket */
   int selflag;	              /* indicates whether the corresponding bucket has been selected */
-  double interval_width;	    /* width of the corresponding interval in [0, 1] */
 };
 
 static void shellsort_int(int *v, int n)
@@ -249,8 +248,8 @@ static void genOneSubsetWithBuckets(struct bucket (*buckets)[NUM_Y_BUCKETS], str
 {
 register int i, j, tries;
 register struct bucket *bptr;
-int     nselected;
-double 	anum, sum;
+int     nselected, sum;
+double 	thresh;
 struct  selection selected_bucks[NUM_X_BUCKETS*NUM_Y_BUCKETS];
 
 	/* prepare to start selecting buckets */
@@ -258,23 +257,23 @@ struct  selection selected_bucks[NUM_X_BUCKETS*NUM_Y_BUCKETS];
 			if(bptr->nummatches==0) continue;
 
 			selected_bucks[j].buck=bptr;
-			selected_bucks[j].interval_width=((double)(bptr->nummatches))/((double)nbData);
 			selected_bucks[j].selflag=0;
 			++j;
-		}
+  }
 
 	nselected=0;
 	while(nselected<sizeSet){
 		tries=MAX_TRIES;
     do{
-		  anum=rng_rdbl01(rstate)*0.999;
+		  thresh=rng_rdbl01(rstate)*0.999;
+		  thresh*=nbData;
       --tries;
 
-		  i=-1; sum=0.0;
+		  i=-1; sum=0; // sum of interval widths in [0, 1] multiplied by nbData
 		  do{
 			  ++i;
-			  sum+=selected_bucks[i].interval_width;
-		  } while(sum<anum);
+			  sum+=(selected_bucks[i].buck)->nummatches;
+		  } while(sum<thresh);
 
     } while(selected_bucks[i].selflag && tries!=0);
 

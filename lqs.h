@@ -10,8 +10,6 @@
 #ifndef _LQS_H
 #define _LQS_H
 
-struct rng_state *state;
-
 extern int lqs_numtries(int p, double i, double P);
 extern int **lqs_allocsets(int sizeSet, int nbSets);
 extern void lqs_freesets(int **sets);

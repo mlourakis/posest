@@ -10,8 +10,6 @@
 #ifndef _RANSAC_H
 #define _RANSAC_H
 
-struct rng_state *state;
-
 extern int ransac_numtries(int p, double i, double P);
 extern int **ransac_allocsets(int sizeSet, int nbSets);
 extern void ransac_freesets(int **sets);

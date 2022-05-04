@@ -1,6 +1,6 @@
     **************************************************************
                                 POSEST
-                              version 1.2
+                              version 1.3
                           By Manolis Lourakis
 
                      Institute of Computer Science

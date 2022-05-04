@@ -231,7 +231,7 @@ static inline void lqs_shuffle(struct rng_state *rstate, int *arr, int n)
 register int i, j;
 
   for(i=0; i<n; ++i){
-    j=(int)rng_rint(state, i+1); // random int in {0 ... i}
+    j=(int)rng_rint(rstate, i+1); // random int in {0 ... i}
     arr[i]=arr[j];
     arr[j]=i;
   }
@@ -266,7 +266,7 @@ static inline void lqs_gensubset(struct rng_state *rstate, int n, int sizeSet, i
 register int i, r;
 
   for(i=0; i<sizeSet; ++i){
-    r=i + (int)rng_rint(state, n-i); // select index from {i ... n-1} ...
+    r=i + (int)rng_rint(rstate, n-i); // select index from {i ... n-1} ...
     subset[i]=work[r]; work[r]=work[i]; work[i]=subset[i]; // ...and swap it with work[i]
   }
 }

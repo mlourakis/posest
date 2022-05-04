@@ -285,6 +285,7 @@ double m[NUM_PNPMATCHES][2], M[NUM_PNPMATCHES][3];
     /* solve P3P */
     /* only the first 3 lines of m, M used in the following */
     nposes=p3p_solve3(&(dat->cal), m, M, R, t); // Grunert's solution
+    //nposes=p3p_ltwist(&(dat->cal), m, M, R, t); // Lambda Twist's solution
     //nposes=p3p_Kneip(&(dat->cal), m, M, R, t); // Kneip's solution
     for(i=j=0; i<nposes; ++i){
       prt=rt+j*NUM_RTPARAMS;

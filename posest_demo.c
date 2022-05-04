@@ -27,6 +27,8 @@
 
 #undef NEED_OUTLIERS // define this to print information about the detected outliers
 
+#define PRINT_INLIERS // define to print inlying points; effective only if NEED_OUTLIERS is also defined
+
 #define MAXSTRLEN 1024
 
 
@@ -258,6 +260,30 @@ clock_t start_time, end_time;
     if(i && !(i%30)) fputc('\n', stdout);
   }
   fputc('\n', stdout);
+
+#ifdef PRINT_INLIERS
+  {
+  int *isinl;
+
+  isinl=(int *)malloc(npts*sizeof(int));
+  if(!isinl){
+    fprintf(stderr, "Memory allocation request failed in main()\n");
+    exit(1);
+  }
+
+  for(i=0; i<npts; ++i)
+    isinl[i]=1;
+  for(i=0; i<noutl; ++i)
+    isinl[outidx[i]]=0;
+
+  for(i=0; i<npts; ++i){
+    if(!isinl[i]) continue;
+
+    printf("%lf %lf %lf  %lf %lf\n", pts3D[i][0], pts3D[i][1], pts3D[i][2],  pts2D[i][0], pts2D[i][1]);
+  }
+  free(isinl);
+  }
+#endif /* PRINT_INLIERS */
 
   if(outidx) free(outidx);
 #endif /* NEED_OUTLIERS */

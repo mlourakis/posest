@@ -46,6 +46,10 @@ extern int p3p_Kneip(struct p3p_calib_params *cp,
                      double m[3][2], double M[3][3],
                      double R[4][3][3], double t[4][3]);
 
+extern int p3p_ltwist(struct p3p_calib_params *cp,
+                     double m[3][2], double M[3][3],
+                     double R[4][3][3], double t[4][3]);
+
 #ifdef __cplusplus
 }
 #endif
