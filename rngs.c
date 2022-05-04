@@ -13,10 +13,10 @@
 #include <time.h>
 #include <math.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER) // Visual Studio
 #include <process.h>
 #define GETPID  _getpid
-#else
+#else // !defined(_WIN32) || !defined(_MSC_VER), e.g. GCC, Mingw, ...
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>

@@ -1,6 +1,6 @@
     **************************************************************
                                 POSEST
-                              version 1.0
+                              version 1.1
                  By Manolis Lourakis & Xenophon Zabulis
 
                      Institute of Computer Science
@@ -44,6 +44,8 @@ The demo program posest_demo and binocposest_demo provide working examples
 of using posest. Please refer to examples/README.txt for sample runs.
 
 MATLAB INTERFACE
-A matlab mex interface will be included in future posest versions.
+The 'matlab' subdirectory in posest's distribution includes a matlab mex
+interface. See the accompanying 'README.txt' for more information and examples
+of use.
 
 Send your comments/bug reports to lourakis (at) ics (dot) forth (dot) gr

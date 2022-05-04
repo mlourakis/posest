@@ -65,7 +65,7 @@ __asm {                                                       \
   __asm fstp QWORD PTR [ebx]                                  \
   }                                                           \
 } while (0)
-#elif defined(__ICC) || defined(__INTEL_COMPILER) || defined(__GNUC__) // ICC, GCC: use sincos
+#elif defined(__ICC) || defined(__INTEL_COMPILER) || (defined(__GNUC__) && !defined(__MINGW32__)) // ICC, GCC: use sincos
 #define SINCOS(x, sn, cs) sincos(x, sn, cs)
 #else
 #define SINCOS(x, sn, cs) do { *(sn)=sin(x); *(cs)=cos(x); } while (0) // other than MSVC, ICC, GCC: use sin & cos

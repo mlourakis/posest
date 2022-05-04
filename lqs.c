@@ -225,44 +225,49 @@ register int i, j, tmp, *v1=v+1;
   }
 }
 
+/* initialize arr with "inside-out" Fisher-Yates shuffle */
+static inline void lqs_shuffle(struct rng_state *rstate, int *arr, int n)
+{
+register int i, j;
+
+  for(i=0; i<n; ++i){
+    j=(int)rng_rint(state, i+1); // random int in {0 ... i}
+    arr[i]=arr[j];
+    arr[j]=i;
+  }
+}
+
 #if 0
 /*
  * generate one subset with indices from 0 to n-1, making sure that all its elements are distinct
  */
-static void lqs_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[])
+static inline void lqs_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[])
 {
 register int i, j, r;
 
-  for(i=0; i<sizeSet;  ){
+  for(i=0; i<sizeSet; ++i){
+resample:
     r=subset[i]=(int)rng_rint(rstate, n); // int in [0, n-1]
     for(j=0; j<i; ++j) 
-      if(r==subset[j]) continue; /* element already in subset, try another one */
-    ++i;
+      if(r==subset[j]) goto resample; /* element already in subset, try another one */
   }
 }
 #endif
 
-/* Select sizeSet items in the range 0 to n-1 (inclusive). To ensure non repeated
- * items, the following strategy is used: A random integer index is generated
- * into an array containing all items from 0 to n-1 and the corresponding item
- * is selected from the array. The selected element is then overwritten in the
- * array by the array's last element and the process is repeated except that
- * the next element's index is selected from the range 0 to n-2, etc.
- * See also Kovesi's randomsample.m
+/* Select sizeSet items in the range 0 to n-1 (inclusive), ensuring non repeated items
  *
- * work should point to working memory at least n elements long
+ * work should point to working memory containing all n elements from {0 ... n-1} in some order.
+ * The function performs a Fisher-Yates shuffle for sizeSet elements at the beginning of work
  *
  * This is more efficient than the version above
  */
-static void lqs_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[], int work[])
+static inline void lqs_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[], int work[])
 {
 register int i, r;
 
-  for(i=n; i-->0;  ) work[i]=i;
-
   for(i=0; i<sizeSet; ++i){
-    r=(int)rng_rint(rstate, n-i); // select index in 0, N-i-1 ...
-    subset[i]=work[r]; work[r]=work[n-i-1]; // ...and move work[n-i-1] in its place
+    r=i + (int)rng_rint(state, n-i); // select index from {i ... n-1} ...
+    subset[i]=work[r]; work[r]=work[i]; work[i]=subset[i]; // ...and swap it with work[i]
   }
 }
 
@@ -283,6 +288,7 @@ void (*howtosort)(int *v, int n);
 	    fprintf(stderr, "Error: Not enough memory in `lqs_genuniquerandomsets'!\n");
 	    exit(1);
     }
+    lqs_shuffle(rstate, wrk, nbData); // init wrk
 
     howtosort=(sizeSet<=20)? insertionsort_int : shellsort_int; /* insertion sort for sort lists, shell sort otherwise */
 
@@ -330,6 +336,7 @@ int *wrk;
 	    fprintf(stderr, "Error: Not enough memory in `lqs_genrandomsets'!\n");
 	    exit(1);
     }
+    lqs_shuffle(rstate, wrk, nbData); // init wrk
 
     for(i=0; i<nbSets; ++i){
       lqs_gensubset(rstate, nbData, sizeSet, sets[i], wrk);
@@ -576,6 +583,7 @@ struct rng_state rstate={0};
           fprintf(stderr, "Error: Not enough memory in lqsfit()!\n");
           exit(1);
         }
+        lqs_shuffle(&rstate, setbuf, nbData); // init (part of) setbuf
 #endif /* GENERATE_RANDOM_SETS_ON_FLY */
 	    }
     }

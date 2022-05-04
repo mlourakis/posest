@@ -101,8 +101,7 @@ register int i, j, r, in;
 int posest_genRandomSetsNoBuckets(int sizeSet, int nbData, int nbSets, int **sets)
 {
   register int i, j, r;
-  int *subset;
-  int *work;
+  int *work, *subset;
   struct rng_state state={0};
 
 #ifdef USE_UNIQUE_SETS
@@ -116,26 +115,23 @@ int posest_genRandomSetsNoBuckets(int sizeSet, int nbData, int nbSets, int **set
     exit(1);
   }
 
-  /* work is shuffled once and then reshuffled in each iteration below */
-  for(i=nbData; i-->0;  ) work[i]=i;
-  /* permute work using the Fisher–Yates (a.k.a. Knuth) shuffle */
-  for(i=nbData; i-->1;  ){  // nbData−1 downto 1
-    j=(int)rng_rint(&state, i+1); // random int in [0, i]
-    r=work[j];
-    work[j]=work[i];
-    work[i]=r;
+  /* work initialized with "inside-out" Fisher-Yates shuffle; then reshuffled in each iteration below */
+  for(i=0; i<nbData; ++i){
+    j=(int)rng_rint(&state, i+1); // random int in {0 ... i}
+    work[i]=work[j];
+    work[j]=i;
   }
 
   for(i=0; i<nbSets;  ){
       /* generate a subset */
       subset=sets[i];
-      /* following code adapted from lqs_gensubset() and ensures no repeated items in set */
 #if 1
       for(j=0; j<sizeSet; ++j){
-        r=(int)rng_rint(&state, nbData-j); // select index in 0, nbData-j-1 ...
-        subset[j]=work[r]; work[r]=work[nbData-j-1]; work[nbData-j-1]=subset[j]; // ...and swap it with work[nbData-j-1]
+        r=j + (int)rng_rint(&state, nbData-j); // select index from {j ... nbData-1} ...
+        subset[j]=work[r]; work[r]=work[j]; work[j]=subset[j]; // ...and swap it with work[j]
       }
 #else
+      /* following code adapted from lqs_gensubset() and ensures no repeated items in set */
       for(j=0; j<sizeSet; ++j){
         register int k;
 resample:

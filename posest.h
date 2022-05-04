@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define POSEST_VERSION    "1.0 (Oct. 2014)"
+#define POSEST_VERSION    "1.1 (May 2015)"
 
 /* non-linear refinement cost functions */
 #define POSEST_REPR_ERR_NO_NLN_REFINE     0 /* reprojection error without non-linear refinement */

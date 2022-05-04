@@ -97,44 +97,49 @@ register int i, j, tmp, *v1=v+1;
   }
 }
 
+/* initialize arr with "inside-out" Fisher-Yates shuffle */
+static inline void ransac_shuffle(struct rng_state *rstate, int *arr, int n)
+{
+register int i, j;
+
+  for(i=0; i<n; ++i){
+    j=(int)rng_rint(state, i+1); // random int in {0 ... i}
+    arr[i]=arr[j];
+    arr[j]=i;
+  }
+}
+
 #if 0
 /*
  * generate one subset with indices from 0 to n-1, making sure that all its elements are distinct
  */
-static void ransac_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[])
+static inline void ransac_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[])
 {
 register int i, j, r;
 
-  for(i=0; i<sizeSet;  ){
+  for(i=0; i<sizeSet; ++i){
+resample:
     r=subset[i]=(int)rng_rint(rstate, n); // int in [0, n-1]
     for(j=0; j<i; ++j) 
-      if(r==subset[j]) continue; /* element already in subset, try another one */
-    ++i;
+      if(r==subset[j]) goto resample; /* element already in subset, try another one */
   }
 }
 #endif
 
-/* Select sizeSet items in the range 0 to n-1 (inclusive). To ensure non repeated
- * items, the following strategy is used: A random integer index is generated
- * into an array containing all items from 0 to n-1 and the corresponding item
- * is selected from the array. The selected element is then overwritten in the
- * array by the array's last element and the process is repeated except that
- * the next element's index is selected from the range 0 to n-2, etc.
- * See also Kovesi's randomsample.m
+/* Select sizeSet items in the range 0 to n-1 (inclusive), ensuring non repeated items
  *
- * work should point to working memory at least n elements long
+ * work should point to working memory containing all n elements from {0 ... n-1} in some order.
+ * The function performs a Fisher-Yates shuffle for sizeSet elements at the beginning of work
  *
  * This is more efficient than the version above
  */
-static void ransac_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[], int work[])
+static inline void ransac_gensubset(struct rng_state *rstate, int n, int sizeSet, int subset[], int work[])
 {
 register int i, r;
 
-  for(i=n; i-->0;  ) work[i]=i;
-
   for(i=0; i<sizeSet; ++i){
-    r=(int)rng_rint(rstate, n-i); // select index in 0, N-i-1 ...
-    subset[i]=work[r]; work[r]=work[n-i-1]; // ...and move work[n-i-1] in its place
+    r=i + (int)rng_rint(state, n-i); // select index from {i ... n-1} ...
+    subset[i]=work[r]; work[r]=work[i]; work[i]=subset[i]; // ...and swap it with work[i]
   }
 }
 
@@ -155,6 +160,7 @@ void (*howtosort)(int *v, int n);
 	    fprintf(stderr, "Error: Not enough memory in `ransac_genuniquerandomsets'!\n");
 	    exit(1);
     }
+    ransac_shuffle(rstate, wrk, nbData); // init wrk
 
     howtosort=(sizeSet<=20)? insertionsort_int : shellsort_int; /* insertion sort for sort lists, shell sort otherwise */
 
@@ -202,6 +208,7 @@ int *wrk;
 	    fprintf(stderr, "Error: Not enough memory in `ransac_genrandomsets'!\n");
 	    exit(1);
     }
+    ransac_shuffle(rstate, wrk, nbData); // init wrk
 
     for(i=0; i<nbSets; ++i){
       ransac_gensubset(rstate, nbData, sizeSet, sets[i], wrk);
@@ -441,13 +448,15 @@ double *sols;
 double *resGood, *resNew;
 double errGood=DBL_MAX, errNew;
 int consGood=0, consNew;
-int adaptNbSamples=INT_MAX;
-int minNbSamples, nbSol;
+int nbSol;
 int freeSets=0, *setbuf=NULL;
 int best=-1;
 register int i, j, k;
 int ret;
 struct rng_state rstate={0};
+#ifdef ATTEMPT_EARLY_TERMINATION
+int minNbSamples;
+#endif
 
     if(nbData<sizeSet){
 	    fprintf(stderr,	"Error: the number of data received by RANSAC cannot be less than the size of random subsets!\n");
@@ -502,13 +511,16 @@ struct rng_state rstate={0};
           fprintf(stderr, "Error: Not enough memory in ransacfit()!\n");
           exit(1);
         }
+        ransac_shuffle(&rstate, setbuf, nbData); // init (part of) setbuf
 #endif /* GENERATE_RANDOM_SETS_ON_FLY */
       }
     }
 
     if(isResidualSqr) consensusThresh*=consensusThresh;
 
+#ifdef ATTEMPT_EARLY_TERMINATION
     minNbSamples=(int)(MINIMUM_ITERATIONS_FRAC*nbSets);
+#endif
     for(i=0; i<nbSets; ++i){
 	    /* estimate the parameters for the ith subset */
       if(sets)
@@ -563,6 +575,7 @@ struct rng_state rstate={0};
 
           /* adaptively estimate the number of samples */
           {
+          int adaptNbSamples;
           double r;
           r=consGood/(double)(nbData);
           adaptNbSamples=
@@ -680,8 +693,7 @@ int mlesacfit(
 double *sols;
 double *resGood, *resNew;
 int consGood=0, consNew;
-int adaptNbSamples=INT_MAX;
-int minNbSamples, nbSol;
+int nbSol;
 int freeSets=0, *setbuf=NULL;
 int best=-1;
 register int i, j, k;
@@ -694,6 +706,9 @@ const double GlobMaxResid=2000.0; // u pg. 142, CHECKME
 const double dSigma=1.0;
 const double dblSigma_sq=2.0*dSigma*dSigma, dSigma_sqrt2pi=dSigma*sqrt(2.0*M_PI);
 register int ii;
+#ifdef ATTEMPT_EARLY_TERMINATION
+int minNbSamples;
+#endif
 
     if(nbData<sizeSet){
 	    fprintf(stderr,	"Error: the number of data received by MLESAC cannot be less than the size of random subsets!\n");
@@ -748,13 +763,16 @@ register int ii;
           fprintf(stderr, "Error: Not enough memory in mlesacfit()!\n");
           exit(1);
         }
+        ransac_shuffle(&rstate, setbuf, nbData); // init (part of) setbuf
 #endif /* GENERATE_RANDOM_SETS_ON_FLY */
       }
     }
 
     if(isResidualSqr) consensusThresh*=consensusThresh;
 
+#ifdef ATTEMPT_EARLY_TERMINATION
     minNbSamples=(int)(MINIMUM_ITERATIONS_FRAC*nbSets);
+#endif
     for(i=0; i<nbSets; ++i){
 	    /* estimate the parameters for the ith subset */
       if(sets)
@@ -820,6 +838,7 @@ register int ii;
 
           /* adaptively estimate the number of samples */
           {
+          int adaptNbSamples;
           double r;
           r=consGood/(double)(nbData);
           adaptNbSamples=
@@ -980,7 +999,7 @@ double *sols, *scores;
 register double *solsptr, err;
 double *resNew;
 int *dataperm, nsols, fi, fi_1;
-int nbSol, adaptNbSamples=INT_MAX;
+int nbSol;
 int freeSets=0, *setbuf=NULL;
 register int i, j, k;
 int ret;
@@ -1028,6 +1047,7 @@ struct rng_state rstate={0};
           fprintf(stderr, "Error: Not enough memory for 'setbuf' in presacfit()!\n");
           exit(1);
         }
+        ransac_shuffle(&rstate, setbuf, nbData); // init (part of) setbuf
 #endif /* GENERATE_RANDOM_SETS_ON_FLY */
       }
     }
@@ -1039,9 +1059,9 @@ struct rng_state rstate={0};
       exit(1);
     }
 
-    /* permute observations using the Fisher–Yates (a.k.a. Knuth) shuffle */
+    /* permute observations using the Fisher-Yates (a.k.a. Knuth) shuffle */
     for(i=0; i<nbData; ++i) dataperm[i]=i;
-    for(i=nbData; i-->1;  ){  // nbData−1 downto 1
+    for(i=nbData; i-->1;  ){  // nbData-1 downto 1
       j=rng_rint(&rstate, i+1); // random int in [0, i]
       k=dataperm[j];
       dataperm[j]=dataperm[i];
