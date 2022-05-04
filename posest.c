@@ -513,7 +513,7 @@ register double *jacrow;
 
 /* nonlinear refinement of camera pose; based on minimizing reprojection error
  *
- * doMLSL is 1 if the MLSL scheme schould be emplooyed, 0 otherwise
+ * doMLSL is 1 if the MLSL scheme schould be employed, 0 otherwise
  * inpl is 1 if function is called by refinePoseRT_inplace(), 0 otherwise
  */
 static int refinePoseRT(double *p, struct RTdata *data, int doMLSL, int inpl, int verbose)
