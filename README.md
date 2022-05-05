@@ -11,10 +11,16 @@ Mismatched 3D-2D point pairs (i.e. outliers) are handled with [RANSAC](https://e
 More details can be found at [posest's web site](https://users.ics.forth.gr/~lourakis/posest/).
 
 ## Required libraries
-posest requires the [levmar](https://users.ics.forth.gr/~lourakis/levmar/) library to build.
+posest requires the [levmar](https://users.ics.forth.gr/~lourakis/levmar/) library to be built. By default, levmar requires [LAPACK](https://github.com/Reference-LAPACK/lapack) or an equivalent library. However, it can also be configured to use a LAPACK-free linear systems solver.
+
+## Build
+After installing the required dependencies, create a ``build`` directory in the root of the cloned repository and run ``cmake``.
+
+## Matlab interface
+posest has a matlab mex interface in the ``matlab`` subdirectory. See the included ``README.txt`` for more information.
 
 ## Cite as
-If you use this code in your published work, please cite the following paper:<br><br>
+If you use this code in your published work, please cite the following [paper](http://users.ics.forth.gr/~lourakis/posest/ICVS13.pdf):<br><br>
 <pre>
 @incollection{Lourakis13model,
   author={Lourakis, Manolis and Zabulis, Xenophon}
